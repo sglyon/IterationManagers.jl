@@ -33,15 +33,11 @@ function display_iter(io::IO,  ds::DefaultState)
     end
 end
 
-# inefficient version of copy that should work for arbitrary types
-# (like tuples of arrays)
-function Base.copy!{T}(a::T, b::T)
-    copy(b)
-end
-
 function update!{T}(istate::DefaultState{T}, v::T; by::Function=default_by)
     istate.n += 1
     istate.change = by(istate.prev, v)
+
+    # TODO: see how/when to use copy! certainty for cases where T <: Array
     istate.prev = copy(v)
 
     new_time = time()

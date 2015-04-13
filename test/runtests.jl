@@ -1,5 +1,5 @@
-# module IMsTest
-module XX
+module TestIM
+
 using IterationManagers
 using Base.Test
 

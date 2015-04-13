@@ -77,7 +77,7 @@ function managed_iteration(f::Function, mgr::IterationManager,
     istate
 end
 
-# kwarg version to create default manger/types
+# kwarg version to create default manger/state
 function managed_iteration(f::Function, init; tol::Float64=NaN,
                            maxiter::Int=reinterpret(Int, Inf),
                            by=default_by,
