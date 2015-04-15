@@ -158,7 +158,8 @@ I wish to point out that we could also write a one-line version of newton's meth
 function newton3(fp::Function, fpp::Function, init; tol::Float64=1e-12,
                  maxiter::Int=500, verbose::Bool=true, print_skip::Int=5)
     # all four stages in one!
-    managed_iteration(x->x-fpp(x)\fp(x), init; tol=tol, maxiter=maxiter, print_skip=1)
+    managed_iteration(x->x-fpp(x)\fp(x), init; tol=tol, maxiter=maxiter, 
+                      print_skip=print_skip, verbose=verbose)
 end
 ```
 
@@ -268,7 +269,7 @@ end
 There are 3 main components:
 
 1. A `finished(mgr::IterationManager, istate::IterationState) => Bool` function that simply takes an `IterationManager` and `IterationState` and checks if the loop should terminate after each iteration
-2. The `update{T}(istate::IterationState, v::T' by=by) => nothing` method that updates the contents of the `IterationState` **inplace** using the new value returned by the function. This routine will check for convergence using the `by` function argument passed to it (the default argument for `by` is a function named `default_by`, which is in `api.jl`)
+2. The `update!{T}(istate::IterationState, v::T, by=by) => nothing` method that updates the contents of the `IterationState` **inplace** using the new value returned by the function. This routine will check for convergence using the `by` function argument passed to it (the default argument for `by` is a function named `default_by`, which is in `api.jl`)
 3. Various `_hook(mgr::IterationManager, istate::IterationState)` methods that allow the user to inject arbitrary code to be run at three stages of the code:
     1. `pre_hook(...) => nothing`: Before iterations begin
     2. `iter_hook(...) => nothing`: Between iterations
