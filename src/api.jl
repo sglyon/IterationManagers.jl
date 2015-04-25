@@ -62,13 +62,13 @@ function post_hook(mgr::IterationManager, istate::IterationState)
     nothing
 end
 
-function managed_iteration(f::Function, mgr::IterationManager,
-                           istate::IterationState;
-                           by=default_by)
+function managed_iteration{T}(f::Function, mgr::IterationManager,
+                              istate::IterationState{T};
+                              by=default_by)
     pre_hook(mgr, istate)
 
     while !(finished(mgr, istate))
-        v = f(istate.prev)
+        v = f(istate.prev)::T  # if we don't get a T back it should be an error
         update!(istate, v; by=by)
         iter_hook(mgr, istate)
     end
@@ -85,5 +85,5 @@ function managed_iteration(f::Function, init; tol::Float64=NaN,
                            print_skip=div(maxiter, 5))
     mgr = DefaultManager(tol, maxiter, verbose, print_skip)
     istate = DefaultState(init)
-    managed_iteration(f, mgr, istate)
+    managed_iteration(f, mgr, istate; by=by)
 end
