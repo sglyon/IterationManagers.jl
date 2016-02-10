@@ -1,16 +1,34 @@
-"""
+#=
 Main generic API
 
 @author : Spencer Lyon <spencer.lyon@stern.nyu.edu>
 @date : 2015-04-13 11:29:12
 
-"""
+=#
 
 # ----------- #
 # Manager API #
 # ----------- #
+"""
+`verbose(m::IterationManager) -> Bool`
+
+Specifies if the iteration manager should be verbose and print status updates.
+
+Checks the `verbose` field of the manager and returns it. If the field
+doesn't exist, the default is false.
+
+"""
 verbose(m::IterationManager) = isdefined(m, :verbose) ? m.verbose : false
 
+"""
+`print_now(m::IterationManager, n::Int) -> Bool`
+
+Specifies if the iteration manager should print on the `n`th iteration
+
+First checks if manager is `verbose`, then checks if manager has a `print_skip`
+field. If so, it returns `true` iff `mod(n, m.print_skip) == 0`. Otherwise,
+`false`
+"""
 print_now(mgr::IterationManager, n::Int) =
     verbose(mgr) && isdefined(mgr, :print_skip) ? n % mgr.print_skip == 0 :
                                                   false
@@ -28,10 +46,24 @@ function default_by{S, T}(x::S, y::T)
     throw(ArgumentError(msg))
 end
 
+"""
+`default_by(x, y)`
+
+Gives the default comparison `by` argument to `managed_iteration` based on the
+types of x and y
+""" default_by
+
 display_iter(istate::IterationState) = display_iter(STDOUT, istate)
 
 display_iter{T<:IterationState}(io::IO, istate::T) =
-    error("display_iter be implemented directly by type $T")
+    error("`display_iter` must be implemented directly by type $T")
+
+"""
+`display_iter([io::IO=STDOUT]::IterationState)`
+
+A `display` method for an iteration state. Must be implemented by all concrete
+subtypes of `IterationState`
+"""
 
 # --------------------------- #
 # Combining Manager and State #
@@ -44,13 +76,46 @@ finished(mgr::IterManager, istate::DefaultState) =  istate.n > mgr.maxiter
 finished(mgr::TolManager, istate::DefaultState) =
     abs(istate.change) <= mgr.tol
 
-# default hooks
+"""
+`finished(mgr::IterationManager, istate::IterationState) -> Bool`
+
+Given a manager and a state, determine if the iterations have finished and
+should thus be terminated
+""" finished
+
+# ------------- #
+# default hooks #
+# ------------- #
+"""
+`pre_hook(mgr::IterationManager, istate::IterationState)`
+
+Called before iterations begin.
+
+For the default manager and state this is used to print the column headers for
+verbose output printing
+"""
 pre_hook(mgr::IterationManager, istate::IterationState) =
     verbose(mgr) && display_iter(istate)
 
+"""
+`iter_hook(mgr::IterationManager, istate::IterationState)`
+
+Called after every iteration.
+
+For the default manager and state this is used to print updates on the
+iterations if `verbose(mgr) == true`.
+"""
 iter_hook(mgr::IterationManager, istate::IterationState) =
     print_now(mgr, istate.n) && display_iter(istate)
 
+"""
+`post_hook(mgr::IterationManager, istate::IterationState)`
+
+Called after iterations have finished
+
+For the default manager this is used to print a warning if the maximum number
+of iterations was exceeded.
+"""
 function post_hook(mgr::IterationManager, istate::IterationState)
     if !(isdefined(mgr, :maxiter))
         return nothing
