@@ -94,13 +94,13 @@ function newton(fp::Function, fpp::Function, init; tol::Float64=1e-12,
         x_new = x - fpp(x) \ fp(x)
 
         # Stage 3: Between iteration processing
-        dist = maxabs(V - V_new)
+        dist = maxabs(x - x_new)
         iter += 1
         new_time = time()
-        elapsed += new_time - old_time - t_old
+        elapsed += new_time - old_time
 
         if verbose && iter % print_skip == 0
-            print("Iteration: $iter\t dist: $(round(dist, 4))\t elapsed: $(elapsed)")
+            println("Iteration: $iter\t dist: $(round(dist, 9))\t elapsed: $(elapsed)")
         end
 
         copy!(x, x_new)
@@ -158,7 +158,8 @@ I wish to point out that we could also write a one-line version of newton's meth
 function newton3(fp::Function, fpp::Function, init; tol::Float64=1e-12,
                  maxiter::Int=500, verbose::Bool=true, print_skip::Int=5)
     # all four stages in one!
-    managed_iteration(x->x-fpp(x)\fp(x), init; tol=tol, maxiter=maxiter, print_skip=1)
+    managed_iteration(x->x-fpp(x)\fp(x), init; tol=tol, maxiter=maxiter, 
+                      print_skip=print_skip, verbose=verbose)
 end
 ```
 
@@ -215,22 +216,23 @@ function vfi_managed(m::GrowthModel, V::Array{Float64, 3}=V_init(m),
     V_new = similar(V)
     pol_ind = similar(V_new, (Int, Int))  # policies will be indexes (ints)
     βEV = similar(V)
-    state = (V, V_new, pol_ind, βEV)  # now state is 4-tuple we will be updating
+    state = (V, pol_ind, βEV)  # now state is 4-tuple we will be updating
 
     # construct manager and state
     mgr = DefaultManager(tol, maxiter)
     istate = DefaultState(state)
 
     # Stages 2, 3, 4
-    managed_iteration(mgr, istate; by=x->maxabs(x[2] - x[1])) do st
+    managed_iteration(mgr, istate; by=(x,y)->maxabs(x[1] - y[1])) do st
         # unpack state and do one iteration
-        V, V_new, pol_ind, βEV = st
+        V, pol_ind, βEV = st
+        V_new = similar(V)
         update_βEV!(m, V, βEV)
         max_R_βEV!(m, βEV, R, V_new, pol_ind)
         howard_improvement!(m, howard_steps, βEV, R, V_new, pol_ind)
 
         # returned repacked state
-        (V, V_new, pol_ind, βEV)
+        (V_new, pol_ind, βEV)
     end
 end
 ```
@@ -268,7 +270,7 @@ end
 There are 3 main components:
 
 1. A `finished(mgr::IterationManager, istate::IterationState) => Bool` function that simply takes an `IterationManager` and `IterationState` and checks if the loop should terminate after each iteration
-2. The `update{T}(istate::IterationState, v::T' by=by) => nothing` method that updates the contents of the `IterationState` **inplace** using the new value returned by the function. This routine will check for convergence using the `by` function argument passed to it (the default argument for `by` is a function named `default_by`, which is in `api.jl`)
+2. The `update!{T}(istate::IterationState, v::T, by=by) => nothing` method that updates the contents of the `IterationState` **inplace** using the new value returned by the function. This routine will check for convergence using the `by` function argument passed to it (the default argument for `by` is a function named `default_by`, which is in `api.jl`)
 3. Various `_hook(mgr::IterationManager, istate::IterationState)` methods that allow the user to inject arbitrary code to be run at three stages of the code:
     1. `pre_hook(...) => nothing`: Before iterations begin
     2. `iter_hook(...) => nothing`: Between iterations
