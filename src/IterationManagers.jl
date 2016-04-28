@@ -16,19 +16,18 @@ abstract IterationState{T}
 export
 # types
     IterationManager, IterationState, IterTolManager,  DefaultManager,
-    IterManager, DefaultState,
+    IterManager, DefaultState, ExtraState,
 
 # functions
     finished, update!, managed_iteration,
-    verbose, print_now, display_iter
+    verbose, print_now, display_iter, num_iter
 
+for s in ["default", "extra"]
+    include("states/$s.jl")
+end
 
 for m in ["itertol", "tol", "iter"]
     include("managers/$m.jl")
-end
-
-for s in ["default"]
-    include("states/$s.jl")
 end
 
 include("api.jl")

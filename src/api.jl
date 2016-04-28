@@ -24,14 +24,17 @@ verbose(m::IterationManager) = isdefined(m, :verbose) ? m.verbose : false
 `print_now(m::IterationManager, n::Int) -> Bool`
 
 Specifies if the iteration manager should print on the `n`th iteration
-
-First checks if manager is `verbose`, then checks if manager has a `print_skip`
-field. If so, it returns `true` iff `mod(n, m.print_skip) == 0`. Otherwise,
-`false`
 """
-print_now(mgr::IterationManager, n::Int) =
-    verbose(mgr) && isdefined(mgr, :print_skip) ? n % mgr.print_skip == 0 :
-                                                  false
+function print_now(mgr::IterationManager, n::Int)
+    if verbose(mgr)
+        isdefined(mgr, :print_skip) ? n % mgr.print_skip == 0 : true
+    else
+        false
+    end
+end
+
+# fallback in case x is not an Int
+print_now(mgr::IterationManager, x::Any) = verbose(mgr)
 
 # --------- #
 # State API #
@@ -46,6 +49,9 @@ function default_by{S, T}(x::S, y::T)
     throw(ArgumentError(msg))
 end
 
+num_iter(::IterationState) = nothing
+Base.norm(::IterationState) = Inf
+
 """
 `default_by(x, y)`
 
@@ -58,25 +64,18 @@ display_iter(istate::IterationState) = display_iter(STDOUT, istate)
 display_iter{T<:IterationState}(io::IO, istate::T) =
     error("`display_iter` must be implemented directly by type $T")
 
-"""
+@doc """
 `display_iter([io::IO=STDOUT]::IterationState)`
 
 A `display` method for an iteration state. Must be implemented by all concrete
 subtypes of `IterationState`
-"""
+""" display_iter
 
 # --------------------------- #
 # Combining Manager and State #
 # --------------------------- #
 
-finished(mgr::DefaultManager, istate::DefaultState) =
-    istate.n > mgr.maxiter || abs(istate.change) <= mgr.tol
-
-finished(mgr::IterManager, istate::DefaultState) =  istate.n > mgr.maxiter
-finished(mgr::TolManager, istate::DefaultState) =
-    abs(istate.change) <= mgr.tol
-
-"""
+@doc """
 `finished(mgr::IterationManager, istate::IterationState) -> Bool`
 
 Given a manager and a state, determine if the iterations have finished and
@@ -97,6 +96,9 @@ verbose output printing
 pre_hook(mgr::IterationManager, istate::IterationState) =
     verbose(mgr) && display_iter(istate)
 
+print_now(mgr::IterationManager, istate::IterationState) =
+    print_now(mgr, num_iter(istate))
+
 """
 `iter_hook(mgr::IterationManager, istate::IterationState)`
 
@@ -106,7 +108,7 @@ For the default manager and state this is used to print updates on the
 iterations if `verbose(mgr) == true`.
 """
 iter_hook(mgr::IterationManager, istate::IterationState) =
-    print_now(mgr, istate.n) && display_iter(istate)
+    print_now(mgr, istate) && display_iter(istate)
 
 """
 `post_hook(mgr::IterationManager, istate::IterationState)`
@@ -120,14 +122,14 @@ function post_hook(mgr::IterationManager, istate::IterationState)
     if !(isdefined(mgr, :maxiter))
         return nothing
     end
-    if istate.n >= mgr.maxiter
+    if num_iter(istate) >= mgr.maxiter
         m = "Maximum iterations exceeded. Algorithm may not have converged"
         warn(m)
     end
     nothing
 end
 
-function managed_iteration{T}(f::Function, mgr::IterationManager,
+function managed_iteration{T}(f::Base.Callable, mgr::IterationManager,
                               istate::IterationState{T};
                               by=default_by)
     pre_hook(mgr, istate)
@@ -142,13 +144,45 @@ function managed_iteration{T}(f::Function, mgr::IterationManager,
     istate
 end
 
+"""
+```julia
+managed_iteration!{T<:AbstractArray}(f!::Base.Callable,
+                                     mgr::IterationManager,
+                                     dest::T,
+                                     istate::IterationState{T};
+                                     by::Base.Callable=default_by)
+```
+
+Given a function with signature `f!(dest::T, src::T)`, run a non-allocating
+version of managed_iteration where each step calls the mutating function `f!`
+that fills its first argument based on the value of the second argument. All
+other behavior is equivalent to other forms of `managed_iteration`
+
+"""
+function managed_iteration!{T<:AbstractArray}(f!::Base.Callable,
+                                              mgr::IterationManager,
+                                              dest::T,
+                                              istate::IterationState{T};
+                                              by::Base.Callable=default_by)
+    pre_hook(mgr, istate)
+
+    while !(finished(mgr, istate))
+        f!(dest, istate.prev)
+        update!(istate, dest; by=by)
+        iter_hook(mgr, istate)
+    end
+
+    post_hook(mgr, istate)
+    istate
+end
+
 # kwarg version to create default manger/state
-function managed_iteration(f::Function, init; tol::Float64=NaN,
-                           maxiter::Int=reinterpret(Int, Inf),
-                           by=default_by,
-                           verbose=true,
-                           print_skip=div(maxiter, 5))
+function managed_iteration{T}(f::Base.Callable, init::T; tol::Float64=NaN,
+                              maxiter::Int=typemax(Int),
+                              by::Base.Callable=default_by,
+                              verbose::Bool=true,
+                              print_skip::Int=div(maxiter, 5))
     mgr = DefaultManager(tol, maxiter, verbose, print_skip)
-    istate = DefaultState(init)
+    istate = DefaultState{T}(init)
     managed_iteration(f, mgr, istate; by=by)
 end

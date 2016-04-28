@@ -18,3 +18,6 @@ function Base.writemime(io::IO, ::MIME"text/plain", im::IterManager)
     m = "IterManager: {1} max iterations ({2})"
     printfmt(io, m, im.maxiter, im.verbose ? "verbose" : "not verbose")
 end
+
+finished(mgr::IterManager, istate::IterationState) =
+    num_iter(istate) > mgr.maxiter

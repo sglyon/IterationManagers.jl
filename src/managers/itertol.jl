@@ -21,3 +21,6 @@ function Base.writemime(io::IO, ::MIME"text/plain", dm::DefaultManager)
     m = "DefaultManager: {1:2.4e} tolerance level, {2} max iterations ({3})"
     printfmt(io, m, dm.tol, dm.maxiter, dm.verbose ? "verbose" : "not verbose")
 end
+
+finished(mgr::DefaultManager, istate::IterationState) =
+    num_iter(istate) > mgr.maxiter || norm(istate) <= mgr.tol
