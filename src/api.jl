@@ -21,6 +21,17 @@ doesn't exist, the default is false.
 verbose(m::IterationManager) = isdefined(m, :verbose) ? m.verbose : false
 
 """
+`prefix(m::IterationManager) -> String`
+
+Defines the prefix that should be applied to all printed messages
+
+Checks the `prefix` field of the manager and returns it. If the field
+doesn't exist, the default is `""`.
+
+"""
+prefix(m::IterationManager) = isdefined(m, :print_prefix) ? m.print_prefix : ""
+
+"""
 `print_now(m::IterationManager, n::Int) -> Bool`
 
 Specifies if the iteration manager should print on the `n`th iteration
@@ -60,13 +71,14 @@ Gives the default comparison `by` argument to `managed_iteration` based on the
 types of x and y
 """ default_by
 
-display_iter(istate::IterationState) = display_iter(STDOUT, istate)
+display_iter(istate::IterationState, prefix="") =
+    display_iter(STDOUT, istate, prefix)
 
-display_iter{T<:IterationState}(io::IO, istate::T) =
+display_iter{T<:IterationState}(io::IO, istate::T, prefix="") =
     error("`display_iter` must be implemented directly by type $T")
 
 @doc """
-`display_iter([io::IO=STDOUT]::IterationState)`
+`display_iter([io::IO=STDOUT], st::IterationState, [prefix::String])`
 
 A `display` method for an iteration state. Must be implemented by all concrete
 subtypes of `IterationState`
@@ -95,7 +107,7 @@ For the default manager and state this is used to print the column headers for
 verbose output printing
 """
 pre_hook(mgr::IterationManager, istate::IterationState) =
-    verbose(mgr) && display_iter(istate)
+    verbose(mgr) && display_iter(istate, prefix(mgr))
 
 print_now(mgr::IterationManager, istate::IterationState) =
     print_now(mgr, num_iter(istate))
@@ -109,7 +121,7 @@ For the default manager and state this is used to print updates on the
 iterations if `verbose(mgr) == true`.
 """
 iter_hook(mgr::IterationManager, istate::IterationState) =
-    print_now(mgr, istate) && display_iter(istate)
+    print_now(mgr, istate) && display_iter(istate, prefix(mgr))
 
 """
 `post_hook(mgr::IterationManager, istate::IterationState)`

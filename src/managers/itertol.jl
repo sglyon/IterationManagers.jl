@@ -11,15 +11,17 @@ immutable IterTolManager <: IterationManager
     maxiter::Int
     verbose::Bool
     print_skip::Int
+    print_prefix::ASCIIString
 end
 typealias DefaultManager IterTolManager
 
 IterTolManager(tol::Float64, maxiter::Int) =
-    IterTolManager(tol, maxiter, true, div(maxiter, 5))
+    IterTolManager(tol, maxiter, true, div(maxiter, 5), "")
 
 function IterTolManager(;tol::Float64=1e-10, maxiter::Int=1000,
-                         verbose::Bool=true, print_skip=div(maxiter, 5))
-    IterTolManager(tol, maxiter, verbose, print_skip)
+                         verbose::Bool=true, print_skip=div(maxiter, 5),
+                         print_prefix="")
+    IterTolManager(tol, maxiter, verbose, print_skip, print_prefix)
 end
 
 function Base.writemime(io::IO, ::MIME"text/plain", dm::DefaultManager)

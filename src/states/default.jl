@@ -25,12 +25,12 @@ end
 num_iter(ds::DefaultState) = ds.n
 Base.norm(istate::DefaultState) = abs(istate.change)
 
-function display_iter(io::IO,  ds::DefaultState)
+function display_iter(io::IO,  ds::DefaultState, prefix="")
     if ds.n == 0  # print banner
-        @printf "%-13s%-15s%-17s\n" "Iteration" "Distance" "Elapsed (seconds)"
-        println(io, repeat("-", 45))
+        @printf "%s%-13s%-15s%-17s\n" prefix "Iteration" "Distance" "Elapsed (seconds)"
+        println(io, prefix, repeat("-", 45))
     else
-        @printf "%-13i%-15.5e%-18.5f\n" ds.n ds.change ds.elapsed
+        @printf "%s%-13i%-15.5e%-18.5f\n" prefix ds.n ds.change ds.elapsed
     end
 end
 

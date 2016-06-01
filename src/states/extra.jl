@@ -26,7 +26,8 @@ function Base.show{T,U}(io::IO, es::ExtraState{T,U})
         - other  : $(stringmime(MIME"text/plain"(), es.other))
     """)
 end
-display_iter(io::IO, es::ExtraState) = display_iter(io, es.default)
+display_iter(io::IO, es::ExtraState, prefix) =
+    display_iter(io, es.default, prefix)
 num_iter(es::ExtraState) = num_iter(es.default)
 Base.norm(es::ExtraState) = norm(es.default)
 
