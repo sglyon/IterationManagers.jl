@@ -17,6 +17,11 @@ typealias DefaultManager IterTolManager
 IterTolManager(tol::Float64, maxiter::Int) =
     IterTolManager(tol, maxiter, true, div(maxiter, 5))
 
+function IterTolManager(;tol::Float64=1e-10, maxiter::Int=1000,
+                         verbose::Bool=true, print_skip=div(maxiter, 5))
+    IterTolManager(tol, maxiter, verbose, print_skip)
+end
+
 function Base.writemime(io::IO, ::MIME"text/plain", dm::DefaultManager)
     m = "DefaultManager: {1:2.4e} tolerance level, {2} max iterations ({3})"
     printfmt(io, m, dm.tol, dm.maxiter, dm.verbose ? "verbose" : "not verbose")
