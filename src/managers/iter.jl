@@ -15,8 +15,8 @@ end
 IterManager(maxiter::Int) = IterManager(maxiter, true, div(maxiter, 5))
 
 function Base.writemime(io::IO, ::MIME"text/plain", im::IterManager)
-    m = "IterManager: {1} max iterations ({2})"
-    printfmt(io, m, im.maxiter, im.verbose ? "verbose" : "not verbose")
+    verb = im.verbose ? "verbose" : "not verbose"
+    println(io, "IterManager: $(im.maxiter) max iterations ($(verb))")
 end
 
 finished(mgr::IterManager, istate::IterationState) =

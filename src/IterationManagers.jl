@@ -5,10 +5,7 @@ Handling convergence ciretron for iterative algorithms
 @date : 2015-04-13 11:29:12
 
 """
-
 module IterationManagers
-
-using Formatting
 
 abstract IterationManager
 abstract IterationState{T}

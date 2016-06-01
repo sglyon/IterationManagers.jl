@@ -27,12 +27,10 @@ Base.norm(istate::DefaultState) = abs(istate.change)
 
 function display_iter(io::IO,  ds::DefaultState)
     if ds.n == 0  # print banner
-        fe = FormatExpr("{1:<13}{2:<15}{3:<17}")
-        printfmtln(io, fe, "Iteration", "Distance", "Elapsed (seconds)")
-        println(io, repeat("-", sum([x.spec.width for x in fe.entries])))
+        @printf "%-13s%-15s%-17s\n" "Iteration" "Distance" "Elapsed (seconds)"
+        println(io, repeat("-", 45))
     else
-        fe = FormatExpr("{1:<13}{2:<15.5e}{3:<18.5f}")
-        printfmtln(io, fe, ds.n, ds.change, ds.elapsed)
+        @printf "%-13i%-15.5e%-18.5f\n" ds.n ds.change ds.elapsed
     end
 end
 

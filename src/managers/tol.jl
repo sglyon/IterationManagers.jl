@@ -15,8 +15,9 @@ end
 TolManager(tol::Float64) = TolManager(tol, true, 50)
 
 function Base.writemime(io::IO, ::MIME"text/plain", tm::TolManager)
-    m = "TolManager: {1:2.4e} tolerance level ({2})"
-    printfmt(io, m, tm.tol, tm.verbose ? "verbose" : "not verbose")
+    @printf(io,
+            "TolManager: %2.4e tolerance level (%s)",
+            tm.tol, tm.verbose)
 end
 
 finished(mgr::TolManager, istate::IterationState) =

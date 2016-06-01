@@ -23,8 +23,9 @@ function IterTolManager(;tol::Float64=1e-10, maxiter::Int=1000,
 end
 
 function Base.writemime(io::IO, ::MIME"text/plain", dm::DefaultManager)
-    m = "DefaultManager: {1:2.4e} tolerance level, {2} max iterations ({3})"
-    printfmt(io, m, dm.tol, dm.maxiter, dm.verbose ? "verbose" : "not verbose")
+    @printf(io,
+            "DefaultManager. %2.4e tolerance level, %i max iterations (%s)",
+            dm.tol, dm.maxiter, dm.verbose ? "verbose" : "not verbose")
 end
 
 finished(mgr::DefaultManager, istate::IterationState) =
