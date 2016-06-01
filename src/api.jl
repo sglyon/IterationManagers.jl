@@ -27,6 +27,7 @@ Specifies if the iteration manager should print on the `n`th iteration
 """
 function print_now(mgr::IterationManager, n::Int)
     if verbose(mgr)
+        n == 1 && return true
         isdefined(mgr, :print_skip) ? n % mgr.print_skip == 0 : true
     else
         false
