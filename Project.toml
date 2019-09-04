@@ -1,5 +1,6 @@
 name = "IterationManagers"
 uuid = "69680d3f-cf1d-5315-a21f-791b8226f004"
+version = "0.1.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
