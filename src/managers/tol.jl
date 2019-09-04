@@ -6,7 +6,7 @@ TolManager: convergence based only on tolerance
 
 """
 
-immutable TolManager <: IterationManager
+struct TolManager <: IterationManager
     tol::Float64
     verbose::Bool
     print_skip::Int
@@ -14,7 +14,7 @@ end
 
 TolManager(tol::Float64) = TolManager(tol, true, 50)
 
-function Base.writemime(io::IO, ::MIME"text/plain", tm::TolManager)
+function Base.show(io::IO, ::MIME"text/plain", tm::TolManager)
     @printf(io,
             "TolManager: %2.4e tolerance level (%s)",
             tm.tol, tm.verbose)

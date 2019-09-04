@@ -6,9 +6,12 @@ Handling convergence ciretron for iterative algorithms
 
 """
 module IterationManagers
+import LinearAlgebra
+using LinearAlgebra: norm
+using Printf
 
-abstract IterationManager
-abstract IterationState{T}
+abstract type IterationManager end
+abstract type IterationState{T} end
 
 export
 # types
@@ -19,13 +22,12 @@ export
     finished, update!, managed_iteration,
     verbose, print_now, display_iter, num_iter
 
-for s in ["default", "extra"]
-    include("states/$s.jl")
-end
+include("states/default.jl")
+include("states/extra.jl")
 
-for m in ["itertol", "tol", "iter"]
-    include("managers/$m.jl")
-end
+include("managers/itertol.jl")
+include("managers/iter.jl")
+include("managers/tol.jl")
 
 include("api.jl")
 

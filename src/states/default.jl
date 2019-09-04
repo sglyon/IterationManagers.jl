@@ -6,7 +6,7 @@ DefaultState: track iterations and elapsed time
 
 """
 
-type DefaultState{T} <: IterationState{T}
+mutable struct DefaultState{T} <: IterationState{T}
     n::Int              # number of iterations
     change::Float64     # change between previous and current state
     elapsed::Float64    # total time elapsed
@@ -14,7 +14,7 @@ type DefaultState{T} <: IterationState{T}
     prev_time::Float64  # previous absolute time
 end
 
-DefaultState{T}(v::T) = DefaultState(0, Inf, 0.0, v, time())
+DefaultState(v) = DefaultState(0, Inf, 0.0, v, time())
 
 function Base.show(io::IO, ds::DefaultState)
     n, d, t = ds.n, round(ds.change, 4), round(ds.elapsed, 4)
@@ -23,7 +23,7 @@ function Base.show(io::IO, ds::DefaultState)
 end
 
 num_iter(ds::DefaultState) = ds.n
-Base.norm(istate::DefaultState) = abs(istate.change)
+LinearAlgebra.norm(istate::DefaultState) = abs(istate.change)
 
 function display_iter(io::IO,  ds::DefaultState, prefix="")
     if ds.n == 0  # print banner
@@ -34,14 +34,14 @@ function display_iter(io::IO,  ds::DefaultState, prefix="")
     end
 end
 
-update_prev!{T<:AbstractArray}(istate::DefaultState{T}, v::T) =
+update_prev!(istate::DefaultState{T}, v::T) where T <: AbstractArray =
     copy!(istate.prev, v)
 
-function update_prev!{T}(istate::DefaultState{T}, v::T)
+function update_prev!(istate::DefaultState{T}, v::T) where T
     istate.prev = copy(v)
 end
 
-function update!{T}(istate::DefaultState{T}, v::T; by::Function=default_by)
+function update!(istate::DefaultState{T}, v::T; by::Function=default_by) where T
     istate.n += 1
     istate.change = by(istate.prev, v)
     update_prev!(istate, v)

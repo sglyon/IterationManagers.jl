@@ -14,7 +14,7 @@ end
 fp(x) = 4*(x - 5)^3
 fpp(x) = 12*(x - 5)^2
 
-@test_approx_eq newton2(fp, fpp, 2.35283735).prev 5.0
+@test newton2(fp, fpp, 2.35283735).prev ≈ 5.0
 
 function rosenbrock_gradient(x::Vector)
     out = similar(x)
@@ -25,7 +25,7 @@ end
 
 function rosenbrock_hessian(x::Vector)
     n = length(x)
-    out = Array(Float64, n, n)
+    out = zeros(n, n)
     out[1, 1] = 2.0 - 400.0 * x[2] + 1200.0 * x[1]^2
     out[1, 2] = -400.0 * x[1]
     out[2, 1] = -400.0 * x[1]
@@ -33,7 +33,7 @@ function rosenbrock_hessian(x::Vector)
     out
 end
 
-@test_approx_eq(newton2(rosenbrock_gradient, rosenbrock_hessian,
+@test ≈(newton2(rosenbrock_gradient, rosenbrock_hessian,
                         [-10.0, -10.0], print_skip=2).prev,
                 [1.0, 1.0])
 

@@ -53,16 +53,16 @@ print_now(mgr::IterationManager, x::Any) = verbose(mgr)
 # --------- #
 
 # default methods for the `by` argument of `update!`
-default_by{T<:Array}(x::T, y::T) = maxabs(x - y)
-default_by{T<:Number}(x::T, y::T) = abs(x - y)
+default_by(x::T, y::T) where T <: AbstractArray = maximum(abs.(x .- y))
+default_by(x::T, y::T) where T <: Number = abs(x - y)
 
-function default_by{S, T}(x::S, y::T)
+function default_by(x::S, y::T) where S where T
     msg = "default_by not implemented for types x::$S, y::$T"
     throw(ArgumentError(msg))
 end
 
 num_iter(::IterationState) = nothing
-Base.norm(::IterationState) = Inf
+LinearAlgebra.norm(::IterationState) = Inf
 
 """
 `default_by(x, y)`
@@ -72,34 +72,36 @@ types of x and y
 """ default_by
 
 display_iter(istate::IterationState, prefix="") =
-    display_iter(STDOUT, istate, prefix)
+    display_iter(stdout, istate, prefix)
 
-display_iter{T<:IterationState}(io::IO, istate::T, prefix="") =
+display_iter(io::IO, istate::T, prefix="") where T <: IterationState =
     error("`display_iter` must be implemented directly by type $T")
 
-@doc """
-`display_iter([io::IO=STDOUT], st::IterationState, [prefix::String])`
+"""
+    display_iter([io::IO=stdout], st::IterationState, [prefix::String])
 
 A `display` method for an iteration state. Must be implemented by all concrete
 subtypes of `IterationState`
-""" display_iter
+"""
+display_iter
 
 # --------------------------- #
 # Combining Manager and State #
 # --------------------------- #
 
-@doc """
-`finished(mgr::IterationManager, istate::IterationState) -> Bool`
+"""
+    finished(mgr::IterationManager, istate::IterationState)::Bool
 
 Given a manager and a state, determine if the iterations have finished and
 should thus be terminated
-""" finished
+"""
+finished
 
 # ------------- #
 # default hooks #
 # ------------- #
 """
-`pre_hook(mgr::IterationManager, istate::IterationState)`
+    pre_hook(mgr::IterationManager, istate::IterationState)
 
 Called before iterations begin.
 
@@ -113,7 +115,7 @@ print_now(mgr::IterationManager, istate::IterationState) =
     print_now(mgr, num_iter(istate))
 
 """
-`iter_hook(mgr::IterationManager, istate::IterationState)`
+    iter_hook(mgr::IterationManager, istate::IterationState)
 
 Called after every iteration.
 
@@ -124,7 +126,7 @@ iter_hook(mgr::IterationManager, istate::IterationState) =
     print_now(mgr, istate) && display_iter(istate, prefix(mgr))
 
 """
-`post_hook(mgr::IterationManager, istate::IterationState)`
+    post_hook(mgr::IterationManager, istate::IterationState)
 
 Called after iterations have finished
 
@@ -136,15 +138,17 @@ function post_hook(mgr::IterationManager, istate::IterationState)
         return nothing
     end
     if num_iter(istate) >= mgr.maxiter
-        m = "Maximum iterations exceeded. Algorithm may not have converged"
-        warn(m)
+        @warn "Maximum iterations exceeded. Algorithm may not have converged"
     end
     nothing
 end
 
-function managed_iteration{T}(f::Base.Callable, mgr::IterationManager,
-                              istate::IterationState{T};
-                              by=default_by)
+function managed_iteration(
+        f::Base.Callable,
+        mgr::IterationManager,
+        istate::IterationState{T};
+        by=default_by
+    ) where T
     pre_hook(mgr, istate)
 
     while !(finished(mgr, istate))
@@ -158,13 +162,13 @@ function managed_iteration{T}(f::Base.Callable, mgr::IterationManager,
 end
 
 """
-```julia
-managed_iteration!{T<:AbstractArray}(f!::Base.Callable,
-                                     mgr::IterationManager,
-                                     dest::T,
-                                     istate::IterationState{T};
-                                     by::Base.Callable=default_by)
-```
+    managed_iteration!(
+        f!::Base.Callable,
+        mgr::IterationManager,
+        dest::T,
+        istate::IterationState{T};
+        by::Base.Callable=default_by
+    ) where T <: AbstractArray
 
 Given a function with signature `f!(dest::T, src::T)`, run a non-allocating
 version of managed_iteration where each step calls the mutating function `f!`
@@ -172,11 +176,13 @@ that fills its first argument based on the value of the second argument. All
 other behavior is equivalent to other forms of `managed_iteration`
 
 """
-function managed_iteration!{T<:AbstractArray}(f!::Base.Callable,
-                                              mgr::IterationManager,
-                                              dest::T,
-                                              istate::IterationState{T};
-                                              by::Base.Callable=default_by)
+function managed_iteration!(
+        f!::Base.Callable,
+        mgr::IterationManager,
+        dest::T,
+        istate::IterationState{T};
+        by::Base.Callable=default_by
+    ) where T <: AbstractArray
     pre_hook(mgr, istate)
 
     while !(finished(mgr, istate))
@@ -190,12 +196,16 @@ function managed_iteration!{T<:AbstractArray}(f!::Base.Callable,
 end
 
 # kwarg version to create default manger/state
-function managed_iteration{T}(f::Base.Callable, init::T; tol::Float64=NaN,
-                              maxiter::Int=typemax(Int),
-                              by::Base.Callable=default_by,
-                              verbose::Bool=true,
-                              print_skip::Int=div(maxiter, 5))
+function managed_iteration(
+        f::Base.Callable,
+        init;
+        tol::Float64=NaN,
+        maxiter::Int=typemax(Int),
+        by::Base.Callable=default_by,
+        verbose::Bool=true,
+        print_skip::Int=div(maxiter, 5)
+    )
     mgr = DefaultManager(tol, maxiter, verbose, print_skip)
-    istate = DefaultState{T}(init)
+    istate = DefaultState(init)
     managed_iteration(f, mgr, istate; by=by)
 end

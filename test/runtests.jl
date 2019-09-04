@@ -1,7 +1,8 @@
 module TestIM
 
 using IterationManagers
-using Base.Test
+using Test
+using LinearAlgebra: norm
 
 include("newton.jl")
 
